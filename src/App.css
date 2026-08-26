@@ -1,0 +1,2709 @@
+/* ==================================================================
+   LENS — App.css
+   Premium, calm, dependency-free Windows text-intelligence UI.
+   ================================================================== */
+
+/* ------------------------------------------------------------------
+   1. DESIGN TOKENS
+   ------------------------------------------------------------------ */
+
+:root {
+  --bg-0: #08080c;
+  --bg-1: #0c0c11;
+  --bg-2: #111118;
+
+  --surface-1: #14141c;
+  --surface-2: #181820;
+  --surface-3: #1d1d27;
+
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.1);
+  --border-accent: rgba(139, 92, 246, 0.45);
+
+  --text-primary: rgba(255, 255, 255, 0.94);
+  --text-secondary: rgba(255, 255, 255, 0.56);
+  --text-tertiary: rgba(255, 255, 255, 0.34);
+
+  --accent-1: #8b5cf6;
+  --accent-2: #a855f7;
+  --accent-3: #c084fc;
+  --accent-soft: rgba(139, 92, 246, 0.14);
+  --accent-glow: rgba(139, 92, 246, 0.35);
+  --accent-text: #d9c6ff;
+
+  --success: #34d399;
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.12);
+
+  --font-sans:
+    "Nirmala UI",
+    "Vrinda",
+    "Segoe UI Variable Text",
+    "Segoe UI",
+    -apple-system,
+    system-ui,
+    "Helvetica Neue",
+    sans-serif;
+
+  --font-mono:
+    ui-monospace,
+    "Cascadia Mono",
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-round: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+
+  --shadow-md:
+    0 8px 24px rgba(0, 0, 0, 0.45);
+
+  --card-glow:
+    0 0 0 1px rgba(139, 92, 246, 0.18),
+    0 8px 24px rgba(0, 0, 0, 0.24),
+    0 0 24px rgba(139, 92, 246, 0.12);
+
+  --card-glow-hover:
+    0 0 0 1px rgba(139, 92, 246, 0.32),
+    0 10px 28px rgba(0, 0, 0, 0.28),
+    0 0 34px rgba(139, 92, 246, 0.2);
+
+  --shadow-glow:
+    0 0 0 1px var(--border-accent),
+    0 6px 24px -4px var(--accent-glow);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 260ms;
+  --dur-slower: 380ms;
+}
+
+/* ------------------------------------------------------------------
+   2. RESET / BASE
+   ------------------------------------------------------------------ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  background: var(--bg-0);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+}
+
+/* THE BLACK RECTANGLE — root cause & fix.
+   `.app.app--orb` (and every element inside it) is already
+   `background: transparent`, but `body` above is NOT — it's
+   var(--bg-0), a near-black solid color, applied unconditionally
+   for every view. `.app--orb` is only ever 80x80 (or right-
+   anchored inside a 280x80 window), so any pixel of the native
+   window that `.app--orb` doesn't itself paint still shows
+   `body`'s solid bg-0 through it — which is exactly the square
+   visible around/behind the circular orb. `html`/`#root` set no
+   background of their own, so `body` is the only opaque layer.
+   Full LENS mode still wants this color (it's the letterbox
+   fallback if `.app`'s max-width: 700 leaves body visible at
+   the sides), so this can't just be removed globally — it's
+   scoped with :has() to only the orb view, leaving Full LENS
+   completely untouched.
+
+   The crop-overlay window (CropApp.tsx → <CropOverlay />) hits the
+   exact same issue: it never renders `.app--orb`, so this rule
+   didn't match there and the fullscreen transparent crop-overlay
+   window showed solid bg-0 (black) instead of the desktop
+   underneath. `.crop-overlay` is CropOverlay's own root element,
+   so it's added here alongside `.app--orb`. */
+body:has(.app--orb),
+body:has(.crop-overlay) {
+  background: transparent;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+button {
+  color: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+input,
+textarea,
+select {
+  color: inherit;
+}
+
+input,
+textarea {
+  background: none;
+  border: none;
+  outline: none;
+}
+
+textarea {
+  resize: vertical;
+}
+
+svg {
+  display: block;
+}
+
+::selection {
+  background: var(--accent-glow);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-3);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ------------------------------------------------------------------
+   3. APP SHELL
+   ------------------------------------------------------------------ */
+
+.app {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-width: 340px;
+  max-width: 700px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      120% 100% at 50% 0%,
+      var(--bg-2) 0%,
+      var(--bg-0) 60%
+    );
+}
+
+.main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px 16px;
+  overflow: hidden;
+}
+
+.home-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
+}
+
+/* ------------------------------------------------------------------
+   4. HEADER
+   ------------------------------------------------------------------ */
+
+.header {
+  flex-shrink: 0;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.018),
+      rgba(255, 255, 255, 0)
+    );
+  box-shadow:
+    0 1px 0 rgba(139, 92, 246, 0.025);
+}
+
+.header__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.header__brand {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header__titles {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.header__name {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background:
+    linear-gradient(
+      135deg,
+      #ffffff 15%,
+      var(--accent-3) 100%
+    );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.header__subtitle {
+  max-width: 260px;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  letter-spacing: 0.035em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header__meta {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header__menu {
+  position: relative;
+}
+
+/* ------------------------------------------------------------------
+   5. LOGO
+   ------------------------------------------------------------------ */
+
+.logo-mark {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+
+.logo-mark::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle,
+      var(--accent-glow) 0%,
+      transparent 70%
+    );
+  opacity: 0.55;
+  animation:
+    logo-breathe 4200ms var(--ease-out) infinite;
+}
+
+.logo-mark--active::before {
+  animation-duration: 1400ms;
+  opacity: 0.85;
+}
+
+.logo-mark__svg {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* ------------------------------------------------------------------
+   6. STATUS
+   ------------------------------------------------------------------ */
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: 0.01em;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-round);
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.status__dot {
+  width: 5px;
+  height: 5px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow:
+    0 0 0 3px rgba(52, 211, 153, 0.1);
+}
+
+.status--working .status__dot {
+  background: var(--accent-3);
+  box-shadow:
+    0 0 0 3px var(--accent-soft);
+  animation:
+    status-pulse 1100ms ease-in-out infinite;
+}
+
+.status--attention .status__dot {
+  background: var(--danger);
+  box-shadow:
+    0 0 0 3px var(--danger-soft);
+}
+
+/* ------------------------------------------------------------------
+   7. ICONS
+   ------------------------------------------------------------------ */
+
+.icon {
+  width: 18px;
+  height: 18px;
+}
+
+.icon--xs {
+  width: 14px;
+  height: 14px;
+}
+
+.icon--sm {
+  width: 16px;
+  height: 16px;
+}
+
+.icon-button {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  transition:
+    background var(--dur-base) var(--ease-out),
+    color var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+.icon-button:hover {
+  background: var(--surface-2);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+  box-shadow:
+    0 0 18px rgba(139, 92, 246, 0.1);
+}
+
+.icon-button:active {
+  transform: scale(0.94);
+}
+
+.icon-button--ghost {
+  color: var(--text-tertiary);
+}
+
+.icon-button--accent {
+  background: var(--accent-1);
+  color: #fff;
+  box-shadow:
+    0 4px 18px rgba(139, 92, 246, 0.3);
+}
+
+.icon-button--accent:hover {
+  background: var(--accent-2);
+  color: #fff;
+  box-shadow:
+    0 6px 24px rgba(139, 92, 246, 0.4);
+}
+
+.icon-button--accent:disabled {
+  background: var(--surface-2);
+  color: var(--text-tertiary);
+  box-shadow: none;
+}
+
+.header .icon-button {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+}
+
+.header .icon-button:hover {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(255, 255, 255, 0.09);
+  box-shadow:
+    0 0 16px rgba(139, 92, 246, 0.1);
+}
+
+/* ------------------------------------------------------------------
+   8. HEADER MENU
+   ------------------------------------------------------------------ */
+
+.menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 168px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow:
+    var(--shadow-md),
+    0 0 24px rgba(139, 92, 246, 0.08);
+  animation:
+    menu-in var(--dur-base) var(--ease-out);
+  transform-origin: top right;
+}
+
+.menu__item {
+  width: 100%;
+  padding: 7px 10px;
+  text-align: left;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.menu__item:hover {
+  background: var(--surface-3);
+  color: var(--text-primary);
+}
+
+/* ------------------------------------------------------------------
+   9. HERO
+   ------------------------------------------------------------------ */
+
+.hero {
+  padding: 10px 2px 2px;
+  animation:
+    fade-up var(--dur-slower) var(--ease-out);
+}
+
+.hero__title {
+  margin-bottom: 5px;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.hero__subtitle {
+  max-width: 42ch;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+/* ------------------------------------------------------------------
+   10. HOME TOOLS
+   ------------------------------------------------------------------ */
+
+.home-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation:
+    fade-up var(--dur-slower) var(--ease-out);
+}
+
+.home-tools-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.home-tool-centered {
+  display: flex;
+  justify-content: center;
+}
+
+.home-tool-centered .action-card {
+  width: calc(50% - 5px);
+}
+
+.home-tool-ask {
+  margin-top: 4px;
+}
+
+/* ------------------------------------------------------------------
+   11. ACTION CARDS
+   ------------------------------------------------------------------ */
+
+.action-card {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  text-align: left;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(139, 92, 246, 0.055),
+      rgba(255, 255, 255, 0.008)
+    ),
+    var(--surface-1);
+  border: 1px solid rgba(139, 92, 246, 0.30);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.025),
+    0 4px 14px rgba(0, 0, 0, 0.16),
+    0 0 14px rgba(139, 92, 246, 0.10);
+  transition:
+    background var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+.action-card:hover {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(139, 92, 246, 0.10),
+      rgba(255, 255, 255, 0.015)
+    ),
+    var(--surface-2);
+  border-color: rgba(139, 92, 246, 0.55);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 8px 22px rgba(0, 0, 0, 0.22),
+    0 0 22px rgba(139, 92, 246, 0.18);
+}
+
+.action-card:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.action-card--active {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(139, 92, 246, 0.13),
+      rgba(139, 92, 246, 0.045)
+    ),
+    var(--surface-1);
+  border-color: rgba(139, 92, 246, 0.60);
+  box-shadow:
+    inset 0 1px 0 rgba(192, 132, 252, 0.08),
+    0 0 20px rgba(139, 92, 246, 0.15),
+    0 0 36px rgba(139, 92, 246, 0.07);
+}
+
+.action-card--active:hover {
+  border-color: rgba(192, 132, 252, 0.75);
+  box-shadow:
+    inset 0 1px 0 rgba(192, 132, 252, 0.1),
+    0 8px 28px rgba(0, 0, 0, 0.22),
+    0 0 28px rgba(139, 92, 246, 0.22);
+}
+
+.action-card__icon {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.045);
+  color: var(--accent-3);
+  transition:
+    background var(--dur-base) var(--ease-out),
+    color var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+.action-card__icon .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.action-card:hover .action-card__icon {
+  background: rgba(139, 92, 246, 0.14);
+  border-color: rgba(139, 92, 246, 0.28);
+  color: var(--accent-text);
+  box-shadow:
+    0 0 16px rgba(139, 92, 246, 0.16);
+}
+
+.action-card--active .action-card__icon {
+  background: rgba(139, 92, 246, 0.18);
+  border-color: rgba(139, 92, 246, 0.32);
+  color: var(--accent-text);
+  box-shadow:
+    0 0 18px rgba(139, 92, 246, 0.2);
+}
+
+.action-card__text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.action-card__title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.action-card--active .action-card__title {
+  color: #fff;
+}
+
+.action-card__desc {
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.action-card__shortcut {
+  position: absolute;
+  top: 8px;
+  right: 9px;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  background: var(--surface-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: 5px;
+  transition:
+    background var(--dur-base) var(--ease-out),
+    color var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+.action-card:hover .action-card__shortcut {
+  color: var(--accent-text);
+  border-color: rgba(139, 92, 246, 0.25);
+  background: rgba(139, 92, 246, 0.1);
+  box-shadow:
+    0 0 10px rgba(139, 92, 246, 0.12);
+}
+
+/* ------------------------------------------------------------------
+   12. PROMINENT ASK AI CARD
+   ------------------------------------------------------------------ */
+
+.action-card--prominent {
+  width: 100%;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(139, 92, 246, 0.1),
+      rgba(255, 255, 255, 0.015)
+    ),
+    var(--surface-1);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.08),
+    0 8px 28px rgba(0, 0, 0, 0.22),
+    0 0 30px rgba(139, 92, 246, 0.17);
+  transition:
+    background var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+.action-card--prominent:hover {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(139, 92, 246, 0.17),
+      rgba(255, 255, 255, 0.03)
+    ),
+    var(--surface-2);
+  border-color: var(--accent-3);
+  transform: translateY(-2px);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.25),
+    0 0 40px rgba(139, 92, 246, 0.28),
+    0 0 0 1px rgba(192, 132, 252, 0.1);
+}
+
+.action-card--prominent .action-card__icon--prominent {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+  background: rgba(139, 92, 246, 0.18);
+  border: 1px solid rgba(139, 92, 246, 0.28);
+  color: var(--accent-text);
+  box-shadow:
+    0 0 18px rgba(139, 92, 246, 0.14);
+}
+
+.action-card--prominent .action-card__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.action-card--prominent .action-card__desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* ------------------------------------------------------------------
+   13. BACK NAVIGATION
+   ------------------------------------------------------------------ */
+
+.action-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  align-self: flex-start;
+  margin-bottom: 16px;
+  padding: 5px 0;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    transform 160ms ease,
+    filter 160ms ease;
+}
+
+.action-back:hover {
+  color: var(--text-primary);
+  filter:
+    drop-shadow(0 0 8px rgba(139, 92, 246, 0.3));
+}
+
+.action-back:active {
+  transform: translateX(-2px);
+}
+
+.action-back .icon {
+  flex-shrink: 0;
+}
+
+/* ------------------------------------------------------------------
+   14. SHARED INPUT CARD
+   ------------------------------------------------------------------ */
+
+.translate-view__input-card,
+.rewrite-view__input-card,
+.ask-ai-view__input-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.018),
+      rgba(139, 92, 246, 0.012)
+    ),
+    var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.14),
+    0 0 18px rgba(139, 92, 246, 0.045);
+  transition:
+    background var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+.translate-view__input-card:hover,
+.rewrite-view__input-card:hover,
+.ask-ai-view__input-card:hover {
+  border-color: rgba(139, 92, 246, 0.26);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.18),
+    0 0 24px rgba(139, 92, 246, 0.1);
+}
+
+.translate-view__input-card:focus-within,
+.rewrite-view__input-card:focus-within,
+.ask-ai-view__input-card:focus-within {
+  border-color: var(--border-accent);
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.1),
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    0 0 32px rgba(139, 92, 246, 0.18);
+}
+
+/* ------------------------------------------------------------------
+   15. TRANSLATE VIEW
+   ------------------------------------------------------------------ */
+
+.translate-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  animation:
+    fade-up var(--dur-slower) var(--ease-out);
+}
+
+.translate-view__title,
+.rewrite-view__title,
+.ask-ai-view__title {
+  margin-top: 4px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
+}
+
+.translate-view__textarea {
+  width: 100%;
+  min-height: 120px;
+  max-height: 240px;
+}
+
+.translate-view__actions,
+.rewrite-view__actions,
+.ask-ai-view__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.translate-view__languages {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    0 0 18px rgba(139, 92, 246, 0.045);
+  transition:
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+.translate-view__languages:hover {
+  border-color: rgba(139, 92, 246, 0.24);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.16),
+    0 0 22px rgba(139, 92, 246, 0.08);
+}
+
+.lang-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.lang-label {
+  font-weight: 500;
+}
+
+.lang-select {
+  padding: 5px 10px;
+  background: var(--surface-3);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  cursor: pointer;
+  outline: none;
+  transition:
+    border-color var(--dur-base) var(--ease-out),
+    background var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+.lang-select:hover {
+  background: var(--surface-2);
+  border-color: rgba(139, 92, 246, 0.22);
+  box-shadow:
+    0 0 14px rgba(139, 92, 246, 0.08);
+}
+
+.lang-select:focus {
+  border-color: var(--border-accent);
+  box-shadow:
+    0 0 18px rgba(139, 92, 246, 0.12);
+}
+
+.translate-view__submit-wrap,
+.rewrite-view__submit-wrap,
+.ask-ai-view__submit-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+/* ------------------------------------------------------------------
+   16. REWRITE VIEW
+   ------------------------------------------------------------------ */
+
+.rewrite-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  animation:
+    fade-up var(--dur-slower) var(--ease-out);
+}
+
+.rewrite-selector {
+  position: relative;
+  width: 100%;
+}
+
+.rewrite-selector__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.14),
+    0 0 18px rgba(139, 92, 246, 0.045);
+  transition:
+    background var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+.rewrite-selector__trigger:hover {
+  background: var(--surface-2);
+  border-color: rgba(139, 92, 246, 0.3);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.18),
+    0 0 24px rgba(139, 92, 246, 0.1);
+}
+
+.rewrite-selector__trigger:focus {
+  border-color: var(--border-accent);
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.1),
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    0 0 30px rgba(139, 92, 246, 0.16);
+}
+
+.rewrite-selector__chevron {
+  color: var(--text-secondary);
+  transition:
+    transform var(--dur-base) var(--ease-out),
+    color var(--dur-base) var(--ease-out);
+}
+
+.rewrite-selector__chevron.is-open {
+  transform: rotate(180deg);
+  color: var(--accent-3);
+}
+
+.rewrite-selector__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow:
+    var(--shadow-md),
+    0 0 28px rgba(139, 92, 246, 0.1);
+  list-style: none;
+  animation:
+    menu-in var(--dur-base) var(--ease-out);
+}
+
+.rewrite-selector__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.rewrite-selector__item:hover {
+  background: var(--surface-3);
+  color: var(--text-primary);
+  box-shadow:
+    inset 0 0 16px rgba(139, 92, 246, 0.05);
+}
+
+.rewrite-selector__item.is-selected {
+  background: var(--accent-soft);
+  color: var(--accent-3);
+  font-weight: 600;
+  box-shadow:
+    0 0 14px rgba(139, 92, 246, 0.08);
+}
+
+.rewrite-selector__check {
+  width: 14px;
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-3);
+}
+
+.rewrite-view__textarea {
+  width: 100%;
+  min-height: 120px;
+  max-height: 240px;
+}
+
+/* ------------------------------------------------------------------
+   17. ASK AI VIEW
+   ------------------------------------------------------------------ */
+
+.ask-ai-view {
+  width: 100%;
+  max-width: 620px;
+  height: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 10px 0 24px;
+  overflow-y: auto;
+  animation:
+    fade-up var(--dur-slower) var(--ease-out);
+}
+
+.ask-ai-view__modes {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ask-ai-view__mode {
+  padding: 9px 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background var(--dur-base) var(--ease-out),
+    color var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.ask-ai-view__mode:hover {
+  color: var(--text-primary);
+  border-color: rgba(139, 92, 246, 0.28);
+  background: rgba(139, 92, 246, 0.045);
+  box-shadow:
+    0 0 18px rgba(139, 92, 246, 0.08);
+  transform: translateY(-1px);
+}
+
+.ask-ai-view__mode.is-active {
+  color: var(--text-primary);
+  background: var(--accent-soft);
+  border-color: var(--border-accent);
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.06),
+    0 0 24px rgba(139, 92, 246, 0.16);
+}
+
+.ask-ai-view__textarea {
+  width: 100%;
+  min-height: 190px;
+  max-height: 320px;
+}
+
+/* ------------------------------------------------------------------
+   18. BUTTONS
+   ------------------------------------------------------------------ */
+
+.chip-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: var(--radius-round);
+  background: var(--surface-3);
+  border: 1px solid var(--border-subtle);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition:
+    background var(--dur-base) var(--ease-out),
+    color var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+.chip-button:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text-primary);
+  border-color: rgba(139, 92, 246, 0.24);
+  box-shadow:
+    0 0 16px rgba(139, 92, 246, 0.08);
+}
+
+.chip-button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.chip-button:disabled {
+  opacity: 0.4;
+}
+
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-round);
+  background:
+    linear-gradient(
+      135deg,
+      var(--accent-1),
+      var(--accent-2)
+    );
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  box-shadow:
+    0 4px 16px -4px var(--accent-glow),
+    0 0 18px rgba(139, 92, 246, 0.12);
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    filter var(--dur-base) var(--ease-out);
+}
+
+.primary-button:hover:not(:disabled) {
+  filter: brightness(1.08);
+  box-shadow:
+    0 6px 20px -4px var(--accent-glow),
+    0 0 28px rgba(139, 92, 246, 0.22);
+}
+
+.primary-button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.primary-button:disabled {
+  background: var(--surface-3);
+  color: var(--text-tertiary);
+  box-shadow: none;
+}
+
+.primary-button--lg {
+  padding: 9px 28px;
+  font-size: 13px;
+}
+
+.ghost-button {
+  padding: 8px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-round);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  transition:
+    background var(--dur-base) var(--ease-out),
+    color var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+.ghost-button:hover {
+  background: var(--surface-2);
+  color: var(--text-primary);
+  border-color: rgba(139, 92, 246, 0.28);
+  box-shadow:
+    0 0 18px rgba(139, 92, 246, 0.08);
+}
+
+/* ------------------------------------------------------------------
+   19. COMPOSER
+   ------------------------------------------------------------------ */
+
+.composer {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  margin-top: auto;
+  overflow: hidden;
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.16),
+    0 0 20px rgba(139, 92, 246, 0.055);
+  transition:
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+.composer:hover {
+  border-color: rgba(139, 92, 246, 0.24);
+  box-shadow:
+    0 6px 22px rgba(0, 0, 0, 0.2),
+    0 0 24px rgba(139, 92, 246, 0.1);
+}
+
+.composer:focus-within {
+  border-color: var(--border-accent);
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.08),
+    0 8px 26px rgba(0, 0, 0, 0.22),
+    0 0 32px rgba(139, 92, 246, 0.18);
+}
+
+.composer__badge {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 12px 0;
+  padding: 5px 8px 5px 10px;
+  background: var(--accent-soft);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-round);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent-text);
+  box-shadow:
+    0 0 16px rgba(139, 92, 246, 0.1);
+  animation:
+    fade-up var(--dur-base) var(--ease-out);
+}
+
+.composer__badge .icon {
+  color: var(--accent-3);
+}
+
+.composer__badge-close {
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--accent-text);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.composer__badge-close:hover {
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 0 10px rgba(139, 92, 246, 0.15);
+}
+
+.composer__field {
+  position: relative;
+  padding: 12px 12px 4px;
+}
+
+.composer__textarea {
+  width: 100%;
+  min-height: 92px;
+  max-height: 220px;
+  resize: vertical;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-primary);
+}
+
+.composer__textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+.composer__count {
+  display: block;
+  padding: 4px 2px 6px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+  transition:
+    color var(--dur-base) var(--ease-out);
+}
+
+.composer__count--warn {
+  color: var(--danger);
+}
+
+.composer__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-2);
+}
+
+.composer__toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.composer__hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 12px 9px;
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+}
+
+.composer__hint kbd {
+  padding: 1px 5px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: var(--surface-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  color: var(--text-secondary);
+}
+
+/* ------------------------------------------------------------------
+   20. PROCESSING
+   ------------------------------------------------------------------ */
+
+.processing {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  animation:
+    fade-up var(--dur-slower) var(--ease-out);
+}
+
+.processing__ring {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  filter:
+    drop-shadow(
+      0 0 12px rgba(139, 92, 246, 0.22)
+    );
+}
+
+.processing__ring span {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid transparent;
+  border-top-color: var(--accent-3);
+  border-radius: 50%;
+  animation:
+    ring-spin 1100ms linear infinite;
+}
+
+.processing__ring span:nth-child(2) {
+  inset: 8px;
+  border-top-color: var(--accent-1);
+  animation-duration: 1500ms;
+  animation-direction: reverse;
+  opacity: 0.7;
+}
+
+.processing__ring span:nth-child(3) {
+  inset: 16px;
+  border-top-color: var(--accent-3);
+  animation-duration: 900ms;
+  opacity: 0.5;
+}
+
+.processing__title {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.processing__dots {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.processing__dots i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--accent-3);
+  font-style: normal;
+  box-shadow:
+    0 0 8px rgba(139, 92, 246, 0.5);
+  animation:
+    dot-bounce 1200ms ease-in-out infinite;
+}
+
+.processing__dots i:nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.processing__dots i:nth-child(3) {
+  animation-delay: 300ms;
+}
+
+.processing__subtitle {
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+}
+
+/* ------------------------------------------------------------------
+   21. RESULT VIEW
+   ------------------------------------------------------------------ */
+
+.result-view {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  animation:
+    fade-up var(--dur-slower) var(--ease-out);
+}
+
+.result-view__header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 12px;
+}
+
+.result-view__title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.result-view__list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  padding-right: 2px;
+  padding-bottom: 4px;
+}
+
+.result-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation:
+    reveal-up var(--dur-slower) var(--ease-out);
+}
+
+.result-block__query {
+  align-self: flex-end;
+  max-width: 85%;
+  padding: 9px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius:
+    var(--radius-lg)
+    var(--radius-lg)
+    4px
+    var(--radius-lg);
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.14),
+    0 0 16px rgba(139, 92, 246, 0.04);
+  transition:
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+.result-block__query:hover {
+  border-color: rgba(139, 92, 246, 0.22);
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.18),
+    0 0 20px rgba(139, 92, 246, 0.08);
+}
+
+.result-block__answer {
+  padding: 14px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.02),
+      rgba(139, 92, 246, 0.018)
+    ),
+    var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius:
+    4px
+    var(--radius-lg)
+    var(--radius-lg)
+    var(--radius-lg);
+  box-shadow:
+    0 5px 18px rgba(0, 0, 0, 0.16),
+    0 0 20px rgba(139, 92, 246, 0.055);
+  transition:
+    background var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+
+.result-block__answer:hover {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(139, 92, 246, 0.065),
+      rgba(255, 255, 255, 0.018)
+    ),
+    var(--surface-2);
+  border-color: rgba(139, 92, 246, 0.3);
+  transform: translateY(-1px);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    0 0 28px rgba(139, 92, 246, 0.12);
+}
+
+.result-block__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent-3);
+}
+
+.result-block__text {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.result-block__actions {
+  display: flex;
+  gap: 6px;
+  padding-left: 2px;
+}
+
+/* ------------------------------------------------------------------
+   22. FOLLOW UP
+   ------------------------------------------------------------------ */
+
+.follow-up {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 6px 6px 6px 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-round);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.14),
+    0 0 18px rgba(139, 92, 246, 0.045);
+  transition:
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+.follow-up:hover {
+  border-color: rgba(139, 92, 246, 0.25);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.18),
+    0 0 22px rgba(139, 92, 246, 0.08);
+}
+
+.follow-up:focus-within {
+  border-color: var(--border-accent);
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.08),
+    0 6px 22px rgba(0, 0, 0, 0.2),
+    0 0 28px rgba(139, 92, 246, 0.16);
+}
+
+.follow-up__input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 0;
+  font-size: 12.5px;
+  color: var(--text-primary);
+}
+
+.follow-up__input::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* ------------------------------------------------------------------
+   23. ERROR VIEW
+   ------------------------------------------------------------------ */
+
+.error-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 24px;
+  text-align: center;
+  animation:
+    fade-up var(--dur-slower) var(--ease-out);
+}
+
+.error-view__icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 6px;
+  border-radius: 50%;
+  background: var(--danger-soft);
+  color: var(--danger);
+  box-shadow:
+    0 0 24px rgba(248, 113, 113, 0.1);
+}
+
+.error-view__title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.error-view__message {
+  max-width: 34ch;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.error-view__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* ------------------------------------------------------------------
+   24. TOAST
+   ------------------------------------------------------------------ */
+
+.toast-host {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 50;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-round);
+  box-shadow:
+    var(--shadow-md),
+    0 0 22px rgba(139, 92, 246, 0.08);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  animation:
+    toast-in var(--dur-slow) var(--ease-out);
+}
+
+.toast--success {
+  color: var(--success);
+  border-color: rgba(52, 211, 153, 0.3);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(52, 211, 153, 0.08);
+}
+
+.toast--success svg {
+  color: var(--success);
+}
+
+/* ------------------------------------------------------------------
+   25. MADE BY
+   ------------------------------------------------------------------ */
+
+.made-by {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 16px;
+  padding-bottom: 4px;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  opacity: 0.55;
+  user-select: none;
+}
+
+.made-by span {
+  opacity: 0.7;
+}
+
+.made-by strong {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* ------------------------------------------------------------------
+   26. SCROLLBARS
+   ------------------------------------------------------------------ */
+
+.home-view::-webkit-scrollbar,
+.translate-view::-webkit-scrollbar,
+.rewrite-view::-webkit-scrollbar,
+.ask-ai-view::-webkit-scrollbar,
+.result-view__list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.home-view::-webkit-scrollbar-track,
+.translate-view::-webkit-scrollbar-track,
+.rewrite-view::-webkit-scrollbar-track,
+.ask-ai-view::-webkit-scrollbar-track,
+.result-view__list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.home-view::-webkit-scrollbar-thumb,
+.translate-view::-webkit-scrollbar-thumb,
+.rewrite-view::-webkit-scrollbar-thumb,
+.ask-ai-view::-webkit-scrollbar-thumb,
+.result-view__list::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border-radius: var(--radius-round);
+}
+
+.home-view::-webkit-scrollbar-thumb:hover,
+.translate-view::-webkit-scrollbar-thumb:hover,
+.rewrite-view::-webkit-scrollbar-thumb:hover,
+.ask-ai-view::-webkit-scrollbar-thumb:hover,
+.result-view__list::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+/* ------------------------------------------------------------------
+   27. KEYFRAMES
+   ------------------------------------------------------------------ */
+
+@keyframes logo-breathe {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.92);
+  }
+
+  50% {
+    opacity: 0.7;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes status-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.3);
+    opacity: 0.6;
+  }
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dot-bounce {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+
+  40% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ------------------------------------------------------------------
+   28. RESPONSIVE
+   ------------------------------------------------------------------ */
+
+@media (max-width: 480px) {
+  .main {
+    padding: 12px 12px 14px;
+  }
+
+  .header {
+    padding: 10px 12px 8px;
+  }
+
+  .hero__title {
+    font-size: 18px;
+  } 
+
+  .home-tools-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .home-tool-centered .action-card {
+    width: 100%;
+  }
+
+  .action-card {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .action-card__desc {
+    display: none;
+  }
+
+  .composer__textarea {
+    min-height: 76px;
+  }
+
+  .composer__hint {
+    display: none;
+  }
+
+  .translate-view__languages {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .lang-group {
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 380px) {
+  .home-tools-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ask-ai-view__modes {
+    flex-wrap: wrap;
+  }
+
+  .ask-ai-view__mode {
+    flex: 1;
+  }
+
+  .header__subtitle {
+    display: none;
+  }
+}
+
+@media (min-width: 620px) {
+  .home-tools-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .home-tool-centered .action-card {
+    width: 100%;
+  }
+
+  .hero__title {
+    font-size: 23px;
+  }
+}
+
+/* ------------------------------------------------------------------
+   29. REDUCED MOTION
+   ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================
+   FLOATING LENS ORB — GEOMETRY NOTES (read before editing)
+   ============================================================
+
+   Real DOM (from App.tsx / FloatingLens.tsx):
+
+     body › #root › div.app.app--orb › div.floating-lens
+                                          ├── div.floating-lens__menu
+                                          │     ├── button.floating-lens__option (Crop)
+                                          │     └── button.floating-lens__option (Open LENS)
+                                          └── button.floating-lens__launcher
+                                        (+ <Toast/>, sibling of .floating-lens)
+
+   Real window geometry (windowManager.ts):
+
+     ORB_SIZE      = 80  x 80
+     ORB_MENU_SIZE = 280 x 80   ← width grows, HEIGHT DOES NOT
+
+   switchToOrbMenuMode() grows the native window from 80→280 wide
+   while shifting the window position left by that same 200px, so
+   the window's RIGHT edge (and the orb, anchored there) never
+   moves on screen. When the menu is open, body/#root are 280x80,
+   with exactly 200px of extra width to the LEFT of the orb and
+   zero extra height — which is why the menu below is a 200x80
+   horizontal layout, not a vertical stack (that was the bug
+   fixed in the previous pass; do not reintroduce a column
+   layout here, it will not fit).
+
+   THE BLACK RECTANGLE (this pass): see `body:has(.app--orb)`
+   near the top of this file — `body`'s solid var(--bg-0) was
+   showing through every transparent orb-mode element. Fixed
+   there, not here, since it's a `body`-level issue.
+
+   THIS PASS also decouples the CLICK/DRAG hit area from the
+   VISIBLE orb: `.floating-lens__launcher` stays a real 80x80
+   button (full hit area, unchanged drag/click behavior), but
+   the drawn circle is a smaller ~66px graphic rendered on its
+   pseudo-elements, centered inside it. This is explicitly
+   permitted by the spec ("hit area can remain 80x80, visible
+   orb ~66px — this is preferred") and, as a side effect, gives
+   the glow ~7px of transparent headroom on each side before it
+   hits the native window's hard edge — which is also why the
+   glow reads as basically invisible before this change: an
+   orb that filled the full 80x80 box had zero room for any
+   blur to render before being clipped by the window boundary.
+   ============================================================ */
+
+/* ============================================================
+   APP SHELL — ORB MODE OVERRIDE
+
+   Deliberately does NOT use width:100%/height:100%. The 80x80
+   box + `margin: 0 0 0 auto` is what keeps the orb pinned to
+   the right edge of #root regardless of whether #root is
+   currently 80px wide (orb closed) or 280px wide (menu open) —
+   #root's flex/auto-margin does the anchoring. Switching this
+   to width:100% would make .app--orb fill the whole (sometimes
+   280px-wide) window and re-center its content, which is
+   exactly the "orb jumps/moves" bug this file is required to
+   avoid. `.app.app--orb` (two classes) raises specificity so
+   this can never lose to the base `.app` rule above it.
+   ============================================================ */
+.app.app--orb {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  min-width: 0;
+  max-width: none;
+  min-height: 0;
+  max-height: none;
+  margin: 0 0 0 auto;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+/* ============================================================
+   FLOATING LENS ORB — CONTAINER
+   ============================================================ */
+.floating-lens {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Explicit compact-mode lock: .floating-lens is only ever
+   rendered with isOrbMode=true today (App.tsx only mounts it
+   inside the "orb" view), so this currently mirrors the base
+   .floating-lens rule above. Kept as its own selector so a
+   future non-orb usage of this component can't silently
+   inherit Full LENS dimensions through it. */
+.floating-lens--orb-mode {
+  width: 80px;
+  height: 80px;
+  min-width: 0;
+  min-height: 0;
+  background: transparent;
+}
+
+/* ============================================================
+   FLOATING MENU
+   Row layout, vertically centered in the 80px-tall window,
+   occupying the 200px of extra width that opens up to the
+   orb's LEFT. `right: 88px` measures from .floating-lens's own
+   right edge (= the window's right edge, since .floating-lens
+   is pinned there): 88px = 80px orb + 8px clearance, so the
+   menu never overlaps the launcher. flex-direction: row-reverse
+   means the first DOM child (Crop) renders closest to the orb
+   (where the reveal animation originates) and the second
+   (Open LENS) sits further out — matching the stagger below.
+
+   The `filter` on this container mixes an animated `blur()`
+   with a constant `drop-shadow()`: since the drop-shadow value
+   is identical in both the closed and open state, only the
+   blur portion actually transitions, while the drop-shadow
+   gives the two option cards one cohesive shared shadow (a
+   "glass panel" read) without wrapping them in a new element.
+   ============================================================ */
+.floating-lens__menu {
+  position: absolute;
+  top: 50%;
+  right: 88px;
+
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+
+  opacity: 0;
+  visibility: hidden;
+  filter: blur(5px)
+    drop-shadow(0 14px 30px rgba(0, 0, 0, 0.4))
+    drop-shadow(0 0 20px rgba(139, 92, 246, 0.12));
+  transform: translate(10px, -50%) scale(0.96);
+  transform-origin: 100% 50%;
+
+  pointer-events: none;
+
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out),
+    filter var(--dur-slow) var(--ease-out),
+    visibility var(--dur-slow) var(--ease-out);
+}
+
+.floating-lens.is-open .floating-lens__menu {
+  opacity: 1;
+  visibility: visible;
+  filter: blur(0)
+    drop-shadow(0 14px 30px rgba(0, 0, 0, 0.4))
+    drop-shadow(0 0 20px rgba(139, 92, 246, 0.12));
+  transform: translate(0, -50%) scale(1);
+  pointer-events: auto;
+}
+
+/* Subtle stagger — Crop (closest to the orb) reveals first;
+   Open LENS follows ~40ms behind. Only the opening transition
+   is delayed; closing is undelayed so the menu collapses as a
+   single unit rather than visibly un-staggering. Targets the
+   2nd DOM child (Open LENS), which is correct regardless of
+   the row-reverse visual order above. */
+.floating-lens__menu .floating-lens__option {
+  transition:
+    background var(--dur-base) ease,
+    border-color var(--dur-base) ease,
+    transform var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) ease;
+}
+
+.floating-lens.is-open .floating-lens__menu .floating-lens__option:nth-child(2) {
+  transition-delay: 40ms;
+}
+
+/* ============================================================
+   FLOATING OPTIONS
+   Fixed 88x60 glass cards. Icon-over-label so both "Crop" and
+   the longer "Open LENS" read cleanly at this width. 88x60 x2
+   + 8px gap = 184px, inside the 200px budget with margin either
+   side; 60px height inside the 80px window with 10px clearance
+   top and bottom. The shared filter/drop-shadow on the parent
+   .floating-lens__menu above (not here) is what makes the two
+   cards read as one connected panel rather than two loose
+   buttons.
+   ============================================================ */
+.floating-lens__option {
+  flex: 0 0 88px;
+  width: 88px;
+  height: 60px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.05),
+      rgba(255, 255, 255, 0) 40%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(29, 25, 43, 0.97),
+      rgba(20, 17, 30, 0.97)
+    );
+  color: var(--text-primary);
+
+  box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.05) inset;
+
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+
+  cursor: pointer;
+
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.1;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.floating-lens__option:hover {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.07),
+      rgba(255, 255, 255, 0) 40%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(40, 32, 58, 0.98),
+      rgba(26, 21, 38, 0.98)
+    );
+  border-color: var(--border-accent);
+  transform: translateY(-1px);
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.07) inset,
+    0 0 0 1px var(--accent-soft),
+    0 0 16px -4px var(--accent-glow);
+}
+
+.floating-lens__option:active {
+  transform: translateY(-1px) scale(0.97);
+}
+
+.floating-lens__option-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: var(--radius-sm);
+
+  background: var(--accent-soft);
+  color: var(--accent-3);
+
+  transition: background var(--dur-base) ease, color var(--dur-base) ease;
+}
+
+.floating-lens__option:hover .floating-lens__option-icon {
+  background: rgba(139, 92, 246, 0.22);
+  color: var(--accent-text);
+}
+
+.floating-lens__option-icon .icon--sm {
+  width: 14px;
+  height: 14px;
+}
+
+/* ============================================================
+   FLOATING LENS ORB — LAUNCHER BUTTON
+
+   `.floating-lens__launcher` is now an INVISIBLE 80x80 hit
+   area — no background, no border, no shadow of its own. It
+   keeps the full 80x80 click/drag target (unchanged pointer
+   handlers, unchanged startOrbDrag()), but every visible pixel
+   of the orb is drawn on its ::before/::after, sized to a
+   66px circle centered inside it:
+
+     ::before → the orb body: layered gradients (base sphere
+                color + a bottom-shading gradient, stacked in
+                one `background`) + the ambient glow / depth
+                box-shadow, all naturally clipped to a circle
+                because the pseudo-element itself is a circle
+                (border-radius: 50%) — no overflow:hidden
+                needed for that, and none is used, so the glow
+                is free to bloom into the ~7px margin around it
+                instead of being clipped flush against the
+                orb's own edge.
+     ::after  → soft top-left specular highlight.
+
+   pointer-events: none on both pseudo-elements (they're
+   decorative); the launcher button itself keeps the default
+   pointer-events: auto, so it remains a real, draggable,
+   clickable target — FloatingLens.tsx's handlers are untouched.
+   ============================================================ */
+.floating-lens__launcher {
+  width: 80px;
+  height: 80px;
+  min-width: 80px;
+  min-height: 80px;
+  max-width: 80px;
+  max-height: 80px;
+  aspect-ratio: 1 / 1;
+  flex: 0 0 80px;
+  box-sizing: border-box;
+
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 50%;
+  position: relative;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: transparent;
+  box-shadow: none;
+
+  cursor: grab;
+}
+
+.floating-lens__launcher::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 66px;
+  height: 66px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle at 50% 120%,
+      rgba(0, 0, 0, 0.42) 0%,
+      rgba(0, 0, 0, 0) 58%
+    ),
+    radial-gradient(
+      circle at 32% 26%,
+      var(--accent-3) 0%,
+      var(--accent-1) 55%,
+      #4c1d95 100%
+    );
+
+  box-shadow:
+    0 0 0 1px var(--border-accent) inset,
+    0 0 0 1px rgba(255, 255, 255, 0.07) inset,
+    0 8px 16px -6px rgba(0, 0, 0, 0.55),
+    0 0 0 3px rgba(139, 92, 246, 0.06),
+    0 0 14px 0 var(--accent-glow);
+
+  pointer-events: none;
+  transition:
+    box-shadow var(--dur-base) var(--ease-out),
+    filter var(--dur-base) var(--ease-out);
+
+  animation: orb-idle-breathe 4s ease-in-out infinite;
+}
+
+/* Soft specular highlight, like light on a glass sphere.
+   Positioned in absolute px relative to the 80px launcher box,
+   tuned to sit in the upper-left quadrant of the 66px circle
+   drawn by ::before above (not a percentage of ::before, since
+   ::after is a sibling pseudo-element, not nested inside it). */
+.floating-lens__launcher::after {
+  content: "";
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  width: 28px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 255, 255, 0.6) 0%,
+    rgba(255, 255, 255, 0) 70%
+  );
+  filter: blur(1px);
+  opacity: 0.75;
+  pointer-events: none;
+  transition: opacity var(--dur-base) ease;
+}
+
+/* Extremely subtle idle "breathing" glow — a slow, low-amplitude
+   shadow shift, not a pulse. Disabled automatically by the
+   global prefers-reduced-motion rule above (which sets
+   animation-duration: 0.001ms on *, *::before, *::after). */
+@keyframes orb-idle-breathe {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px var(--border-accent) inset,
+      0 0 0 1px rgba(255, 255, 255, 0.07) inset,
+      0 8px 16px -6px rgba(0, 0, 0, 0.55),
+      0 0 0 3px rgba(139, 92, 246, 0.06),
+      0 0 12px 0 var(--accent-glow);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px var(--border-accent) inset,
+      0 0 0 1px rgba(255, 255, 255, 0.07) inset,
+      0 8px 16px -6px rgba(0, 0, 0, 0.55),
+      0 0 0 3px rgba(139, 92, 246, 0.09),
+      0 0 18px 0 var(--accent-glow);
+  }
+}
+
+.floating-lens__launcher:hover::before {
+  filter: brightness(1.08);
+  box-shadow:
+    0 0 0 1px var(--border-accent) inset,
+    0 0 0 1px rgba(255, 255, 255, 0.14) inset,
+    0 8px 18px -6px rgba(0, 0, 0, 0.55),
+    0 0 0 4px rgba(139, 92, 246, 0.1),
+    0 0 20px 1px var(--accent-glow);
+}
+
+.floating-lens__launcher:hover::after {
+  opacity: 1;
+}
+
+/* Hover/press scale the whole 80x80 button (not just the 66px
+   ::before circle), so even at 1.02x the drawn orb — 66px → 
+   ~67.3px — stays well inside the 80x80 window with no risk of
+   being clipped by the native window's hard edge. */
+.floating-lens__launcher:hover {
+  transform: scale(1.02);
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+/* Tactile press feedback, scoped to :active so it never fires
+   mid-drag — startOrbDrag()/pointer handlers in FloatingLens.tsx
+   own all drag/click semantics and are untouched. */
+.floating-lens__launcher:active {
+  cursor: grabbing;
+  transform: scale(0.96);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.floating-lens__launcher .icon {
+  width: 26px;
+  height: 26px;
+  color: #ffffff;
+  pointer-events: none;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.35));
+  opacity: 0.96;
+  transition: opacity var(--dur-base) ease, filter var(--dur-base) ease;
+}
+
+.floating-lens__launcher:hover .icon {
+  opacity: 1;
+  filter: drop-shadow(0 0 9px rgba(255, 255, 255, 0.5));
+}
+
+/* ============================================================
+   GRAMMAR CORRECTION DIFF HIGHLIGHTING
+   ============================================================ */
+
+.result-block__text .grammar-result {
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.6;
+}
+
+.grammar-segment {
+  position: relative;
+  display: inline;
+  padding: 1px 0;
+  cursor: help;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.grammar-text--equal {
+  cursor: text;
+}
+
+.grammar-text--added {
+  background: var(--accent-soft);
+  border-bottom: 2px solid var(--accent-2);
+  color: var(--text-primary);
+}
+
+.grammar-text--replaced {
+  background: var(--accent-soft);
+  border-bottom: 2px dashed var(--accent-3);
+  color: var(--text-primary);
+}
+
+.grammar-text--removed {
+  background: var(--danger-soft);
+  color: var(--danger);
+  text-decoration: line-through;
+}
+
+/* Tooltip container styling matching LENS theme */
+.grammar-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  
+  width: max-content;
+  max-width: 280px;
+  padding: 8px 12px;
+  
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+  box-shadow: var(--shadow-md);
+  
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-primary);
+  white-space: normal;
+  
+  pointer-events: none;
+  animation: tooltipFadeIn var(--dur-fast) var(--ease-out);
+}
+
+/* Tooltip Down Arrow pointer */
+.grammar-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--surface-3) transparent transparent transparent;
+}
+
+.grammar-tooltip__content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.grammar-tooltip__row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.grammar-tooltip__label {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.grammar-tooltip__val {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.grammar-tooltip__val--del {
+  color: var(--danger);
+  text-decoration: line-through;
+}
+
+.grammar-tooltip__val--ins {
+  color: var(--success);
+}
+
+.grammar-tooltip__divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 2px 0;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
