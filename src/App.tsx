@@ -1,3 +1,5 @@
+
+
 import {
   useState,
   useEffect,
@@ -1845,16 +1847,8 @@ function App(): ReactNode {
   const abortControllerRef =
     useRef<AbortController | null>(null);
 
-  // Tracks the highest crop session_id (Rust CROP_GENERATION value) whose
-  // crop-image-captured event has been accepted. The handler rejects any event
-  // whose session_id is lower than this, which prevents an older handler
-  // (suspended across `await executeVisionOCR()`) from overwriting a newer
-  // crop result that already called setText(). See the crop-image-captured effect.
   const latestCropSessionRef = useRef<number>(0);
 
-  // True while a crop workflow is actively delivering its result (from image
-  // captured through switchToAppMode + setText). Guards the close interceptor
-  // so that win.hide() inside switchToAppMode() cannot trigger handleReturnToOrb().
   const isCropWorkflowActiveRef = useRef<boolean>(false);
 
   const activeAction =
@@ -2086,8 +2080,6 @@ function App(): ReactNode {
     }
   }, [showToast]);
 
-  // Receive the screen image from capture_screen_image, run AI Vision OCR,
-  // then bring LENS to the foreground with the extracted text saved to cropStore.
   useEffect(() => {
     let effectActive = true;
     let unlistenCaptured: (() => void) | undefined;
@@ -2103,7 +2095,6 @@ function App(): ReactNode {
         console.log(`[CROP PERF] IMAGE_CAPTURED session=${incomingSession} t=${tImgCaptured.toFixed(2)}ms`);
         console.log(`[CROP FLOW] IMAGE_CAPTURED session=${incomingSession}`);
 
-        // Discard events from old sessions
         if (incomingSession < latestCropSessionRef.current) {
           console.log(`[CROP FLOW] STALE_DISCARD session=${incomingSession}`);
           return;
@@ -2115,7 +2106,6 @@ function App(): ReactNode {
         void (async () => {
           isCropWorkflowActiveRef.current = true;
 
-          // 1. Immediately bring App to foreground so user sees LENS UI right after capture
           if (!isToolLaunch) {
             const tAppStart = performance.now();
             console.log(`[CROP PERF] APP_MODE_START session=${incomingSession} t=${tAppStart.toFixed(2)}ms`);
@@ -2208,11 +2198,7 @@ function App(): ReactNode {
   }, [showToast]);
 
   const handleReturnToOrb = useCallback(async () => {
-    // If a crop workflow is actively delivering its result, do NOT switch to
-    // orb mode. The switchToAppMode() call inside the crop handler temporarily
-    // hides then shows the window, which can fire a close-requested event on
-    // some Windows configurations; this guard prevents that from collapsing
-    // the app back to the orb while OCR text is being set.
+
     if (isCropWorkflowActiveRef.current) {
       console.log("[CROP FLOW] handleReturnToOrb SUPPRESSED — crop workflow active");
       return;
@@ -2220,13 +2206,12 @@ function App(): ReactNode {
     try {
       await switchToOrbMode();
     } catch {
-      // Fallback if not running in Tauri
+
     }
 
     setView("orb");
   }, []);
 
-  // Intercept window close requested event so close minimizes to orb
   useEffect(() => {
     let unlisten: (() => void) | undefined;
 
@@ -2980,3 +2965,4 @@ function App(): ReactNode {
 }
 
 export default App;
+
