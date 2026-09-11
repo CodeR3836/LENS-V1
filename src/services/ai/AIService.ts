@@ -57,9 +57,6 @@ class AIService {
       );
     }
 
-    /*
-     * If the provider supports streaming, use it.
-     */
     if (adapter.completeStream) {
       return await adapter.completeStream(
         request,
@@ -69,12 +66,6 @@ class AIService {
       );
     }
 
-    /*
-     * Fallback for providers that don't support streaming yet.
-     *
-     * This keeps the existing providers working while we
-     * gradually add streaming support to them.
-     */
     const response = await adapter.complete(
       request,
       config
