@@ -12,12 +12,6 @@ export interface ProviderConfig {
   model?: string;
 }
 
-/**
- * Image input for vision-capable AI models.
- *
- * `data` must contain raw Base64 image data only.
- * Do NOT include the `data:image/png;base64,` prefix.
- */
 export interface AIImageInput {
   data: string;
   mimeType: string;
@@ -27,11 +21,6 @@ export interface AICompletionRequest {
   systemPrompt?: string;
   userPrompt: string;
 
-  /**
-   * Optional images for vision-capable models.
-   *
-   * If omitted, the request is text-only.
-   */
   images?: AIImageInput[];
 
   temperature?: number;
