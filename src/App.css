@@ -1,11 +1,9 @@
-/* ==================================================================
-   LENS — App.css
-   Premium, calm, dependency-free Windows text-intelligence UI.
-   ================================================================== */
+
 
 /* ------------------------------------------------------------------
    1. DESIGN TOKENS
    ------------------------------------------------------------------ */
+/* ig there are some bugs in the floating function tho ill fix it in future or ig ill make LENS V2 */
 
 :root {
   --bg-0: #08080c;
@@ -115,28 +113,6 @@ body {
   overflow: hidden;
 }
 
-/* THE BLACK RECTANGLE — root cause & fix.
-   `.app.app--orb` (and every element inside it) is already
-   `background: transparent`, but `body` above is NOT — it's
-   var(--bg-0), a near-black solid color, applied unconditionally
-   for every view. `.app--orb` is only ever 80x80 (or right-
-   anchored inside a 280x80 window), so any pixel of the native
-   window that `.app--orb` doesn't itself paint still shows
-   `body`'s solid bg-0 through it — which is exactly the square
-   visible around/behind the circular orb. `html`/`#root` set no
-   background of their own, so `body` is the only opaque layer.
-   Full LENS mode still wants this color (it's the letterbox
-   fallback if `.app`'s max-width: 700 leaves body visible at
-   the sides), so this can't just be removed globally — it's
-   scoped with :has() to only the orb view, leaving Full LENS
-   completely untouched.
-
-   The crop-overlay window (CropApp.tsx → <CropOverlay />) hits the
-   exact same issue: it never renders `.app--orb`, so this rule
-   didn't match there and the fullscreen transparent crop-overlay
-   window showed solid bg-0 (black) instead of the desktop
-   underneath. `.crop-overlay` is CropOverlay's own root element,
-   so it's added here alongside `.app--orb`. */
 body:has(.app--orb),
 body:has(.crop-overlay) {
   background: transparent;
@@ -2101,67 +2077,7 @@ svg {
   }
 }
 
-/* ============================================================
-   FLOATING LENS ORB — GEOMETRY NOTES (read before editing)
-   ============================================================
-
-   Real DOM (from App.tsx / FloatingLens.tsx):
-
-     body › #root › div.app.app--orb › div.floating-lens
-                                          ├── div.floating-lens__menu
-                                          │     ├── button.floating-lens__option (Crop)
-                                          │     └── button.floating-lens__option (Open LENS)
-                                          └── button.floating-lens__launcher
-                                        (+ <Toast/>, sibling of .floating-lens)
-
-   Real window geometry (windowManager.ts):
-
-     ORB_SIZE      = 80  x 80
-     ORB_MENU_SIZE = 280 x 80   ← width grows, HEIGHT DOES NOT
-
-   switchToOrbMenuMode() grows the native window from 80→280 wide
-   while shifting the window position left by that same 200px, so
-   the window's RIGHT edge (and the orb, anchored there) never
-   moves on screen. When the menu is open, body/#root are 280x80,
-   with exactly 200px of extra width to the LEFT of the orb and
-   zero extra height — which is why the menu below is a 200x80
-   horizontal layout, not a vertical stack (that was the bug
-   fixed in the previous pass; do not reintroduce a column
-   layout here, it will not fit).
-
-   THE BLACK RECTANGLE (this pass): see `body:has(.app--orb)`
-   near the top of this file — `body`'s solid var(--bg-0) was
-   showing through every transparent orb-mode element. Fixed
-   there, not here, since it's a `body`-level issue.
-
-   THIS PASS also decouples the CLICK/DRAG hit area from the
-   VISIBLE orb: `.floating-lens__launcher` stays a real 80x80
-   button (full hit area, unchanged drag/click behavior), but
-   the drawn circle is a smaller ~66px graphic rendered on its
-   pseudo-elements, centered inside it. This is explicitly
-   permitted by the spec ("hit area can remain 80x80, visible
-   orb ~66px — this is preferred") and, as a side effect, gives
-   the glow ~7px of transparent headroom on each side before it
-   hits the native window's hard edge — which is also why the
-   glow reads as basically invisible before this change: an
-   orb that filled the full 80x80 box had zero room for any
-   blur to render before being clipped by the window boundary.
-   ============================================================ */
-
-/* ============================================================
-   APP SHELL — ORB MODE OVERRIDE
-
-   Deliberately does NOT use width:100%/height:100%. The 80x80
-   box + `margin: 0 0 0 auto` is what keeps the orb pinned to
-   the right edge of #root regardless of whether #root is
-   currently 80px wide (orb closed) or 280px wide (menu open) —
-   #root's flex/auto-margin does the anchoring. Switching this
-   to width:100% would make .app--orb fill the whole (sometimes
-   280px-wide) window and re-center its content, which is
-   exactly the "orb jumps/moves" bug this file is required to
-   avoid. `.app.app--orb` (two classes) raises specificity so
-   this can never lose to the base `.app` rule above it.
-   ============================================================ */
+/* I guess i have to improve this umm its kinda a error there nvm */
 .app.app--orb {
   position: relative;
   width: 80px;
@@ -2200,12 +2116,6 @@ svg {
   justify-content: center;
 }
 
-/* Explicit compact-mode lock: .floating-lens is only ever
-   rendered with isOrbMode=true today (App.tsx only mounts it
-   inside the "orb" view), so this currently mirrors the base
-   .floating-lens rule above. Kept as its own selector so a
-   future non-orb usage of this component can't silently
-   inherit Full LENS dimensions through it. */
 .floating-lens--orb-mode {
   width: 80px;
   height: 80px;
@@ -2214,25 +2124,6 @@ svg {
   background: transparent;
 }
 
-/* ============================================================
-   FLOATING MENU
-   Row layout, vertically centered in the 80px-tall window,
-   occupying the 200px of extra width that opens up to the
-   orb's LEFT. `right: 88px` measures from .floating-lens's own
-   right edge (= the window's right edge, since .floating-lens
-   is pinned there): 88px = 80px orb + 8px clearance, so the
-   menu never overlaps the launcher. flex-direction: row-reverse
-   means the first DOM child (Crop) renders closest to the orb
-   (where the reveal animation originates) and the second
-   (Open LENS) sits further out — matching the stagger below.
-
-   The `filter` on this container mixes an animated `blur()`
-   with a constant `drop-shadow()`: since the drop-shadow value
-   is identical in both the closed and open state, only the
-   blur portion actually transitions, while the drop-shadow
-   gives the two option cards one cohesive shared shadow (a
-   "glass panel" read) without wrapping them in a new element.
-   ============================================================ */
 .floating-lens__menu {
   position: absolute;
   top: 50%;
@@ -2271,12 +2162,6 @@ svg {
   pointer-events: auto;
 }
 
-/* Subtle stagger — Crop (closest to the orb) reveals first;
-   Open LENS follows ~40ms behind. Only the opening transition
-   is delayed; closing is undelayed so the menu collapses as a
-   single unit rather than visibly un-staggering. Targets the
-   2nd DOM child (Open LENS), which is correct regardless of
-   the row-reverse visual order above. */
 .floating-lens__menu .floating-lens__option {
   transition:
     background var(--dur-base) ease,
@@ -2289,17 +2174,6 @@ svg {
   transition-delay: 40ms;
 }
 
-/* ============================================================
-   FLOATING OPTIONS
-   Fixed 88x60 glass cards. Icon-over-label so both "Crop" and
-   the longer "Open LENS" read cleanly at this width. 88x60 x2
-   + 8px gap = 184px, inside the 200px budget with margin either
-   side; 60px height inside the 80px window with 10px clearance
-   top and bottom. The shared filter/drop-shadow on the parent
-   .floating-lens__menu above (not here) is what makes the two
-   cards read as one connected panel rather than two loose
-   buttons.
-   ============================================================ */
 .floating-lens__option {
   flex: 0 0 88px;
   width: 88px;
@@ -2392,33 +2266,6 @@ svg {
   height: 14px;
 }
 
-/* ============================================================
-   FLOATING LENS ORB — LAUNCHER BUTTON
-
-   `.floating-lens__launcher` is now an INVISIBLE 80x80 hit
-   area — no background, no border, no shadow of its own. It
-   keeps the full 80x80 click/drag target (unchanged pointer
-   handlers, unchanged startOrbDrag()), but every visible pixel
-   of the orb is drawn on its ::before/::after, sized to a
-   66px circle centered inside it:
-
-     ::before → the orb body: layered gradients (base sphere
-                color + a bottom-shading gradient, stacked in
-                one `background`) + the ambient glow / depth
-                box-shadow, all naturally clipped to a circle
-                because the pseudo-element itself is a circle
-                (border-radius: 50%) — no overflow:hidden
-                needed for that, and none is used, so the glow
-                is free to bloom into the ~7px margin around it
-                instead of being clipped flush against the
-                orb's own edge.
-     ::after  → soft top-left specular highlight.
-
-   pointer-events: none on both pseudo-elements (they're
-   decorative); the launcher button itself keeps the default
-   pointer-events: auto, so it remains a real, draggable,
-   clickable target — FloatingLens.tsx's handlers are untouched.
-   ============================================================ */
 .floating-lens__launcher {
   width: 80px;
   height: 80px;
@@ -2484,11 +2331,6 @@ svg {
   animation: orb-idle-breathe 4s ease-in-out infinite;
 }
 
-/* Soft specular highlight, like light on a glass sphere.
-   Positioned in absolute px relative to the 80px launcher box,
-   tuned to sit in the upper-left quadrant of the 66px circle
-   drawn by ::before above (not a percentage of ::before, since
-   ::after is a sibling pseudo-element, not nested inside it). */
 .floating-lens__launcher::after {
   content: "";
   position: absolute;
@@ -2508,10 +2350,6 @@ svg {
   transition: opacity var(--dur-base) ease;
 }
 
-/* Extremely subtle idle "breathing" glow — a slow, low-amplitude
-   shadow shift, not a pulse. Disabled automatically by the
-   global prefers-reduced-motion rule above (which sets
-   animation-duration: 0.001ms on *, *::before, *::after). */
 @keyframes orb-idle-breathe {
   0%,
   100% {
@@ -2546,18 +2384,11 @@ svg {
   opacity: 1;
 }
 
-/* Hover/press scale the whole 80x80 button (not just the 66px
-   ::before circle), so even at 1.02x the drawn orb — 66px → 
-   ~67.3px — stays well inside the 80x80 window with no risk of
-   being clipped by the native window's hard edge. */
 .floating-lens__launcher:hover {
   transform: scale(1.02);
   transition: transform var(--dur-base) var(--ease-out);
 }
 
-/* Tactile press feedback, scoped to :active so it never fires
-   mid-drag — startOrbDrag()/pointer handlers in FloatingLens.tsx
-   own all drag/click semantics and are untouched. */
 .floating-lens__launcher:active {
   cursor: grabbing;
   transform: scale(0.96);
