@@ -1,23 +1,13 @@
-/**
- * textDiff.ts
- *
- * A deterministic token-based diffing engine using LCS.
- * Splits text into paragraphs to optimize performance and prevent O(n^2) slowdowns on long texts.
- * Groups and trims whitespace so highlighted segments map exactly to the corrected words/phrases.
- */
+
 
 export interface DiffSegment {
   id: string;
   type: "equal" | "added" | "removed" | "replaced";
-  value: string;         // The final text to display
-  originalValue?: string; // The original text (for replacements/deletions)
+  value: string;         
+  originalValue?: string; 
 }
 
-/**
- * Tokenizes text, capturing words, whitespace (including newlines), and punctuation.
- * e.g. "She go." => ["She", " ", "go", "."]
- * `.join("")` on the result will always recreate the input exactly.
- */
+
 function tokenize(text: string): string[] {
   return text.split(/([^\w']+|\s+)/).filter(Boolean);
 }
@@ -27,10 +17,7 @@ interface RawToken {
   value: string;
 }
 
-/**
- * LCS-based token diffing.
- * Safety limit: if N * M > 120,000, it falls back to a single replacement block.
- */
+
 function diffTokens(A: string[], B: string[]): RawToken[] {
   const N = A.length;
   const M = B.length;
@@ -42,13 +29,6 @@ function diffTokens(A: string[], B: string[]): RawToken[] {
     return A.map(val => ({ type: "removed", value: val }));
   }
 
-  // Safety performance safeguard.
-  // NOTE: this threshold must comfortably exceed N*M for realistic input.
-  // The composer textarea caps input at 8000 chars; a representative ~7000-char
-  // paragraph tokenizes to ~2400 tokens, i.e. N*M ~= 5.9M. The previous limit of
-  // 120,000 was far below that, so any multi-sentence paragraph (not just single
-  // sentences) silently fell back to a single whole-text replacement block below,
-  // which is what caused changed words to stop being individually highlighted.
   if (N * M > 25000000) {
     return [
       { type: "removed", value: A.join("") },
@@ -93,9 +73,7 @@ function nextSegId(): string {
   return `seg-${segmentIdCounter}-${Math.random().toString(36).substring(2, 7)}`;
 }
 
-/**
- * Trims leading/trailing whitespace from edits and aligns common whitespaces to avoid highlighting them.
- */
+
 function createSegments(
   type: "added" | "removed" | "replaced",
   original: string,
@@ -107,7 +85,6 @@ function createSegments(
     let orig = original;
     let corr = corrected;
 
-    // Align identical leading whitespace
     let leading = "";
     while (orig.length > 0 && corr.length > 0 && orig[0] === corr[0] && /\s/.test(orig[0])) {
       leading += orig[0];
@@ -118,7 +95,6 @@ function createSegments(
       result.push({ id: nextSegId(), type: "equal", value: leading });
     }
 
-    // Align identical trailing whitespace
     let trailing = "";
     while (
       orig.length > 0 &&
@@ -144,7 +120,7 @@ function createSegments(
       result.push({ id: nextSegId(), type: "equal", value: trailing });
     }
   } else if (type === "added") {
-    // added text is in corrected
+
     const matchLead = corrected.match(/^(\s+)/);
     const matchTrail = corrected.match(/(\s+)$/);
 
@@ -162,7 +138,7 @@ function createSegments(
       result.push({ id: nextSegId(), type: "equal", value: trail });
     }
   } else {
-    // removed text is in original, but visually displayed as removed
+
     const matchLead = original.match(/^(\s+)/);
     const matchTrail = original.match(/(\s+)$/);
 
@@ -177,7 +153,7 @@ function createSegments(
       result.push({
         id: nextSegId(),
         type: "removed",
-        value: "", // Display value is empty in corrected text representation, but we keep originalValue for strikethrough rendering
+        value: "", 
         originalValue: core
       });
     }
@@ -189,9 +165,6 @@ function createSegments(
   return result;
 }
 
-/**
- * Groups raw tokens into high-level diff segments.
- */
 function groupTokens(tokens: RawToken[]): DiffSegment[] {
   const segments: DiffSegment[] = [];
   let removedBuf: string[] = [];
@@ -214,7 +187,7 @@ function groupTokens(tokens: RawToken[]): DiffSegment[] {
   for (const token of tokens) {
     if (token.type === "equal") {
       flushEdits();
-      // Merge consecutive equal segments
+
       const last = segments[segments.length - 1];
       if (last && last.type === "equal") {
         last.value += token.value;
@@ -232,10 +205,7 @@ function groupTokens(tokens: RawToken[]): DiffSegment[] {
   return segments;
 }
 
-/**
- * Main pure entry point to diff two texts.
- * Splits by paragraph if structures match, otherwise diffs full text.
- */
+
 export function diffText(original: string, corrected: string): DiffSegment[] {
   if (original === corrected) {
     return [{ id: nextSegId(), type: "equal", value: corrected }];
@@ -258,7 +228,6 @@ export function diffText(original: string, corrected: string): DiffSegment[] {
     return allSegments;
   }
 
-  // Fallback to full text diff if paragraph structure changes
   const A = tokenize(original);
   const B = tokenize(corrected);
   const raw = diffTokens(A, B);
