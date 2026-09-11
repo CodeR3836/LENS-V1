@@ -60,18 +60,6 @@ export class GeminiProvider implements AIProviderAdapter {
       `?key=${encodeURIComponent(apiKey)}` +
       (stream ? "&alt=sse" : "");
 
-    /*
-     * ----------------------------------------------------------
-     * Build Gemini content parts
-     * ----------------------------------------------------------
-     *
-     * Text is always included.
-     *
-     * If images are provided, they are sent as inlineData.
-     *
-     * This allows the SAME selected Gemini model to handle
-     * both normal text requests and vision requests.
-     */
 
     const parts: Array<Record<string, unknown>> = [];
 
