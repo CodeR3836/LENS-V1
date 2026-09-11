@@ -38,27 +38,13 @@ export interface SummarizeSkillPayload {
 }
 
 export interface AskAISkillPayload {
-  /**
-   * The article, pasted text, or cropped/selected text
-   * that LENS should work with.
-   */
+
   text: string;
 
-  /**
-   * Ask AI has two modes:
-   *
-   * make-question:
-   * LENS generates important questions from the text
-   * and answers them.
-   *
-   * ask-text:
-   * The user asks a question based on the provided text.
-   */
+
   mode: AskAIMode;
 
-  /**
-   * Only required when mode === "ask-text".
-   */
+
   question?: string;
 }
 
