@@ -1,4 +1,4 @@
-// Prevents additional console window on Windows in release, DO NOT REMOVE!!
+
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -15,8 +15,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
     SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, WS_EX_APPWINDOW, WS_EX_TOOLWINDOW,
 };
 
-/// Monotonically increasing id for the current crop session, bumped every
-/// time `open_crop_window` starts a new one.
+
 static CROP_GENERATION: AtomicU64 = AtomicU64::new(0);
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
@@ -37,7 +36,7 @@ pub struct CapturedImage {
     pub height: u32,
 }
 
-/// Captures a rectangle of the screen using Win32 GDI into a BGRA byte buffer.
+
 fn capture_screen_region(
     x: i32,
     y: i32,
@@ -69,7 +68,7 @@ fn capture_screen_region(
 
         let old_obj = SelectObject(hdc_mem, hbitmap);
 
-        // Capture screen pixels. CAPTUREBLT includes layered/transparent windows.
+
         let blt_res = BitBlt(
             hdc_mem,
             0,
@@ -90,12 +89,11 @@ fn capture_screen_region(
             return Err(format!("BitBlt failed: {:?}", e));
         }
 
-        // Prepare 32-bit BGRA top-down DIB header
         let mut bmi = BITMAPINFO {
             bmiHeader: BITMAPINFOHEADER {
                 biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
                 biWidth: width,
-                biHeight: -height, // negative height for top-down row order
+                biHeight: -height, 
                 biPlanes: 1,
                 biBitCount: 32,
                 biCompression: BI_RGB.0,
@@ -120,7 +118,8 @@ fn capture_screen_region(
             DIB_RGB_COLORS,
         );
 
-        // Cleanup GDI handles
+
+        
         SelectObject(hdc_mem, old_obj);
         let _ = DeleteObject(hbitmap);
         let _ = DeleteDC(hdc_mem);
@@ -134,7 +133,6 @@ fn capture_screen_region(
     }
 }
 
-/// Encodes raw Win32 BGRA pixel buffer to a Base64-encoded PNG image string (lossless).
 fn bgra_to_png_base64(bgra: &[u8], width: u32, height: u32) -> Result<String, String> {
     use base64::prelude::*;
     use image::codecs::png::{CompressionType, FilterType, PngEncoder};
@@ -143,7 +141,6 @@ fn bgra_to_png_base64(bgra: &[u8], width: u32, height: u32) -> Result<String, St
     let start_proc = std::time::Instant::now();
     eprintln!("[CROP PERF] IMAGE_PROCESSING_START");
 
-    // Convert BGRA (Win32 GDI format) to RGBA (Standard PNG format)
     let mut rgba = Vec::with_capacity((width * height * 4) as usize);
     for chunk in bgra.chunks_exact(4) {
         rgba.push(chunk[2]); // R
@@ -176,7 +173,6 @@ fn bgra_to_png_base64(bgra: &[u8], width: u32, height: u32) -> Result<String, St
     Ok(encoded)
 }
 
-/// Forces the main window to keep a Windows taskbar button.
 #[tauri::command]
 fn ensure_taskbar_visible(window: tauri::WebviewWindow) -> Result<(), String> {
     let raw_hwnd = window.hwnd().map_err(|e| e.to_string())?;
@@ -200,12 +196,10 @@ fn ensure_taskbar_visible(window: tauri::WebviewWindow) -> Result<(), String> {
     Ok(())
 }
 
-/// Opens the crop-overlay window hidden.
 #[tauri::command]
 async fn open_crop_window(app: tauri::AppHandle) -> Result<u64, String> {
     let session_id = CROP_GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
 
-    // Close any stale crop window first
     if let Some(existing) = app.get_webview_window("crop-overlay") {
         let _ = existing.close();
         std::thread::sleep(std::time::Duration::from_millis(50));
@@ -231,7 +225,7 @@ async fn open_crop_window(app: tauri::AppHandle) -> Result<u64, String> {
     .skip_taskbar(true)
     .resizable(false)
     .shadow(false)
-    .visible(false); // Start hidden — show only after WebView paints
+    .visible(false); 
 
     if let Some(m) = monitor {
         let sf = m.scale_factor();
@@ -249,7 +243,6 @@ async fn open_crop_window(app: tauri::AppHandle) -> Result<u64, String> {
     Ok(session_id)
 }
 
-/// Called by the crop-overlay React app once it has mounted and painted.
 #[tauri::command]
 async fn show_crop_window(app: tauri::AppHandle) -> Result<(), String> {
     if let Some(win) = app.get_webview_window("crop-overlay") {
@@ -259,8 +252,7 @@ async fn show_crop_window(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-/// Captures the selected screen region into a Base64-encoded JPEG image,
-/// closes the crop overlay, restores the main LENS window, and emits `crop-image-captured`.
+
 #[tauri::command]
 async fn capture_screen_image(
     app: tauri::AppHandle,
@@ -268,7 +260,6 @@ async fn capture_screen_image(
 ) -> Result<CapturedImage, String> {
     let my_generation = CROP_GENERATION.load(Ordering::SeqCst);
 
-    // 1. Query monitor geometry and scale factor BEFORE hiding the window.
     let (monitor_x, monitor_y, scale_factor) =
         if let Some(crop_win) = app.get_webview_window("crop-overlay") {
             let sf = crop_win.scale_factor().unwrap_or(1.0);
@@ -287,7 +278,6 @@ async fn capture_screen_image(
             (0, 0, 1.0)
         };
 
-    // Helper closure to ensure crop window is closed and main window restored
     let restore_windows = |app_handle: &tauri::AppHandle| {
         if let Some(crop_win) = app_handle.get_webview_window("crop-overlay") {
             let _ = crop_win.close();
@@ -299,20 +289,15 @@ async fn capture_screen_image(
         }
     };
 
-    // 2. Hide the crop overlay window so it's not captured in the screenshot
     if let Some(crop_win) = app.get_webview_window("crop-overlay") {
         let _ = crop_win.hide();
     }
-
-    // Small yield to ensure OS compositor has cleared the overlay
     std::thread::sleep(std::time::Duration::from_millis(35));
 
-    // Check if superseded before running screen capture
     if CROP_GENERATION.load(Ordering::SeqCst) != my_generation {
         return Err("Crop session superseded".to_string());
     }
 
-    // 3. Compute exact physical screen coordinates based on monitor origin and DPI scale
     let phys_x = monitor_x + (rect.x * scale_factor).round() as i32;
     let phys_y = monitor_y + (rect.y * scale_factor).round() as i32;
     let phys_w = (rect.width * scale_factor).round() as i32;
@@ -323,7 +308,6 @@ async fn capture_screen_image(
         return Err("Selection area too small".to_string());
     }
 
-    // 4. Screen Capture via Win32 GDI
     eprintln!("[CROP PERF] IMAGE_CAPTURE_START");
     let capture_start = std::time::Instant::now();
     let (bgra_bytes, width, height) = capture_screen_region(phys_x, phys_y, phys_w, phys_h)
@@ -338,7 +322,6 @@ async fn capture_screen_image(
         capture_start.elapsed()
     );
 
-    // 5. Encode to Base64 PNG image (lossless for AI Vision OCR accuracy)
     let image_base64 = bgra_to_png_base64(&bgra_bytes, width, height)?;
 
     let result = CapturedImage {
@@ -350,23 +333,18 @@ async fn capture_screen_image(
         height,
     };
 
-    // Check again if superseded while encoding
     if CROP_GENERATION.load(Ordering::SeqCst) != my_generation {
         return Ok(result);
     }
 
-    // 6. Close the crop overlay window and restore main window
     restore_windows(&app);
 
-    // 7. Emit crop-image-captured event to main window
     if let Some(main_win) = app.get_webview_window("main") {
         let _ = main_win.emit("crop-image-captured", result.clone());
     }
 
     Ok(result)
 }
-
-/// Cancels crop mode: closes crop overlay, restores main LENS window, emits crop-cancelled.
 #[tauri::command]
 async fn cancel_crop(app: tauri::AppHandle) -> Result<(), String> {
     if let Some(crop_win) = app.get_webview_window("crop-overlay") {
@@ -383,7 +361,6 @@ async fn cancel_crop(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-/// Closes the crop-overlay window.
 #[tauri::command]
 async fn close_crop_window(app: tauri::AppHandle) -> Result<(), String> {
     if let Some(win) = app.get_webview_window("crop-overlay") {
@@ -451,7 +428,7 @@ mod tests {
     fn test_png_base64_encoding() {
         let width = 2;
         let height = 2;
-        // 4 pixels of solid red in BGRA: B=0, G=0, R=255, A=255
+
         let bgra = vec![0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255];
         let encoded = bgra_to_png_base64(&bgra, width, height).expect("Encoding must succeed");
         assert!(!encoded.is_empty(), "Encoded string must not be empty");
@@ -478,13 +455,12 @@ mod tests {
         let active_session = 3u64;
         let mut completed_session = 0u64;
 
-        // Session 1 finishes (stale) -> rejected
+
         if 1u64 >= active_session {
             completed_session = 1;
         }
         assert_ne!(completed_session, 1, "Session 1 must be rejected as stale");
 
-        // Session 2 finishes (stale) -> rejected
         if 2u64 >= active_session {
             completed_session = 2;
         }
