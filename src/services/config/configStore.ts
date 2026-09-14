@@ -57,7 +57,6 @@ class ConfigStore {
         }
       }
     } catch {
-      // Fallback silently if storage read fails
     }
   }
 
@@ -95,7 +94,6 @@ class ConfigStore {
     try {
       localStorage.setItem(`${STORAGE_KEY_PREFIX}${type}`, JSON.stringify(updated));
     } catch {
-      // Ignore
     }
   }
 }
