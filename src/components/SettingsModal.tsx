@@ -46,13 +46,13 @@ export const SettingsModal: FC<SettingsModalProps> = ({
     setActiveType(type);
     setConfig(configStore.getProviderConfig(type));
 
-    // New provider = no previous test result
+    
     setConnectionStatus("idle");
     setShowApiKey(false);
   };
 
   const handleTestConnection = async () => {
-    // Reset status while testing
+    
     setConnectionStatus("testing");
 
     if (activeType === "mock") {
@@ -67,14 +67,14 @@ export const SettingsModal: FC<SettingsModalProps> = ({
     try {
       await aiService.testConnection(activeType, config);
 
-      // SUCCESS
+      
       setConnectionStatus("success");
 
       onToast(
         `${activeType.toUpperCase()} connection successful.`
       );
     } catch (err: unknown) {
-      // ERROR
+      
       setConnectionStatus("error");
 
       const message =
@@ -124,9 +124,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({
         className="settings-modal"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* =====================================================
-            HEADER
-        ====================================================== */}
+        
 
         <div className="settings-modal__header">
           <span className="settings-modal__title">
@@ -144,13 +142,11 @@ export const SettingsModal: FC<SettingsModalProps> = ({
           </button>
         </div>
 
-        {/* =====================================================
-            BODY
-        ====================================================== */}
+        
 
         <div className="settings-modal__body">
 
-          {/* Provider Selection */}
+          
 
           <div className="settings-field">
             <label
@@ -195,9 +191,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({
 
 
 
-          {/* =================================================
-              MOCK
-          ================================================= */}
+          
 
           {activeType === "mock" && (
             <p className="settings-field__hint">
@@ -206,9 +200,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({
             </p>
           )}
 
-          {/* =================================================
-              OLLAMA
-          ================================================= */}
+          
 
           {activeType === "ollama" && (
             <>
@@ -224,7 +216,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({
                   id="ollama-url"
                   type="text"
                   className="settings-field__input"
-                  placeholder="http://localhost:11434"
+                  placeholder="http:
                   value={config.baseUrl || ""}
                   onChange={(e) =>
                     setConfig({
@@ -262,9 +254,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({
             </>
           )}
 
-          {/* =================================================
-              CLAUDE
-          ================================================= */}
+          
 
           {activeType === "claude" && (
             <>
@@ -337,9 +327,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({
             </>
           )}
 
-          {/* =================================================
-              OPENAI COMPATIBLE
-          ================================================= */}
+          
 
           {activeType === "openai_compatible" && (
             <>
@@ -398,7 +386,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({
                   id="openai-url"
                   type="text"
                   className="settings-field__input"
-                  placeholder="https://api.openai.com"
+                  placeholder="https:
                   value={config.baseUrl || ""}
                   onChange={(e) =>
                     setConfig({
@@ -436,9 +424,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({
             </>
           )}
 
-          {/* =================================================
-              GEMINI
-          ================================================= */}
+          
 
           {activeType === "gemini" && (
             <>
@@ -512,9 +498,7 @@ export const SettingsModal: FC<SettingsModalProps> = ({
           )}
         </div>
 
-        {/* =====================================================
-            FOOTER
-        ====================================================== */}
+        
 
         <div className="settings-modal__footer">
 
