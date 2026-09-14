@@ -11,7 +11,6 @@
   font-family: var(--font-sans);
 }
 
-/* Fullscreen SVG dimming layer */
 .crop-overlay__svg-dim {
   position: absolute;
   inset: 0;
@@ -21,12 +20,11 @@
 }
 
 .crop-overlay__svg-dim rect {
-  /* Subtle backdrop-filter to blur desktop behind the dim area slightly */
+
   backdrop-filter: blur(2px);
   transition: fill var(--dur-slow) var(--ease-out);
 }
 
-/* Selection Box */
 .crop-overlay__selection {
   position: absolute;
   border: 2px solid var(--accent-2);
@@ -57,7 +55,6 @@
   }
 }
 
-/* Central Drag-to-Move Handle */
 .crop-handle-move {
   position: absolute;
   inset: 12px;
@@ -65,7 +62,6 @@
   z-index: 1;
 }
 
-/* Size Badge */
 .crop-size-badge {
   position: absolute;
   top: -28px;
@@ -94,7 +90,6 @@
   }
 }
 
-/* Resize Handles Common Styles */
 .crop-handle {
   position: absolute;
   width: 14px;
@@ -112,7 +107,6 @@
   background-color: var(--accent-3);
 }
 
-/* Corner Handles placement */
 .crop-handle-nw {
   top: -7px;
   left: -7px;
@@ -137,7 +131,6 @@
   cursor: nesw-resize;
 }
 
-/* Edge Handles placement */
 .crop-handle-n {
   top: -7px;
   left: calc(50% - 7px);
@@ -162,14 +155,13 @@
   cursor: ew-resize;
 }
 
-/* Floating Action Toolbar */
 .crop-toolbar {
   position: absolute;
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 6px;
-  background-color: rgba(20, 20, 28, 0.85); /* var(--surface-1) translucent */
+  background-color: rgba(20, 20, 28, 0.85); 
   backdrop-filter: blur(16px);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
@@ -224,7 +216,6 @@
   color: var(--text-primary);
 }
 
-/* Specific button overrides */
 .crop-toolbar-btn--confirm {
   background-color: var(--accent-1);
   color: #ffffff;
@@ -255,7 +246,6 @@
   margin: 0 2px;
 }
 
-/* Hint / Helper guide when idle */
 .crop-hint-container {
   position: absolute;
   left: 50%;
