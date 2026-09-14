@@ -31,9 +31,7 @@ import {
 } from "./services/cropService";
 import { listen } from "@tauri-apps/api/event";
 
-/* ============================================================
-   TYPES
-   ============================================================ */
+//  im gonna change the function a lil bit in future in Lens2 version there are some bugs in the flaoting function ig ,, 
 
 type ActionId =
   | "rewrite"
@@ -84,10 +82,6 @@ interface ToastState {
   message: string;
   tone: "default" | "success";
 }
-
-/* ============================================================
-   ICONS — single consistent stroke-based system
-   ============================================================ */
 
 const strokeProps = {
   fill: "none",
@@ -266,9 +260,6 @@ const IconScissors: FC<IconProps> = ({ className }) => (
   </svg>
 );
 
-/* ============================================================
-   LOGO
-   ============================================================ */
 
 const Logo: FC<{ pulsing?: boolean }> = ({ pulsing }) => (
   <span
@@ -312,9 +303,6 @@ const Logo: FC<{ pulsing?: boolean }> = ({ pulsing }) => (
   </span>
 );
 
-/* ============================================================
-   ACTION DATA
-   ============================================================ */
 
 const ACTIONS: ActionDef[] = [
   {
@@ -370,9 +358,6 @@ const PRIMARY_ACTIONS = ACTIONS.filter(
 const DEFAULT_ACTION =
   ACTIONS.find((action) => action.id === "ask")!;
 
-/* ============================================================
-   STATUS
-   ============================================================ */
 
 const StatusIndicator: FC<{ view: ViewState }> = ({ view }) => {
   const label =
@@ -390,9 +375,6 @@ const StatusIndicator: FC<{ view: ViewState }> = ({ view }) => {
   );
 };
 
-/* ============================================================
-   HEADER MENU
-   ============================================================ */
 
 const HeaderMenu: FC<{
   onClose: () => void;
@@ -420,9 +402,6 @@ const HeaderMenu: FC<{
   );
 };
 
-/* ============================================================
-   HEADER
-   ============================================================ */
 
 const Header: FC<{
   view: ViewState;
@@ -566,9 +545,6 @@ const Header: FC<{
   );
 };
 
-/* ============================================================
-   HERO
-   ============================================================ */
 
 const Hero: FC = () => (
   <div className="hero">
@@ -578,9 +554,6 @@ const Hero: FC = () => (
   </div>
 );
 
-/* ============================================================
-   ACTION CARD
-   ============================================================ */
 
 const ActionCard: FC<{
   action: ActionDef;
@@ -621,9 +594,6 @@ const ActionCard: FC<{
   );
 };
 
-/* ============================================================
-   HOME TOOLS
-   ============================================================ */
 
 const HomeTools: FC<{
   onSelect: (action: ActionDef) => void;
@@ -694,9 +664,6 @@ const HomeTools: FC<{
   );
 };
 
-/* ============================================================
-   LANGUAGES
-   ============================================================ */
 
 export interface LanguageOption {
   code: string;
@@ -761,9 +728,6 @@ export const SOURCE_LANGUAGES: LanguageOption[] = [
 export const TARGET_LANGUAGES: LanguageOption[] =
   SUPPORTED_LANGUAGES;
 
-/* ============================================================
-   TRANSLATE VIEW
-   ============================================================ */
 
 const TranslateView: FC<{
   text: string;
@@ -920,9 +884,6 @@ const TranslateView: FC<{
   );
 };
 
-/* ============================================================
-   REWRITE
-   ============================================================ */
 
 export interface RewriteOption {
   id: string;
@@ -958,9 +919,6 @@ const REWRITE_TYPES: RewriteOption[] = [
   },
 ];
 
-/* ============================================================
-   REWRITE TYPE SELECTOR
-   ============================================================ */
 
 const RewriteTypeSelector: FC<{
   selected: RewriteOption;
@@ -1053,9 +1011,6 @@ const RewriteTypeSelector: FC<{
   );
 };
 
-/* ============================================================
-   REWRITE VIEW
-   ============================================================ */
 
 const RewriteView: FC<{
   text: string;
@@ -1155,10 +1110,6 @@ const RewriteView: FC<{
     </div>
   );
 };
-
-/* ============================================================
-   ASK AI VIEW
-   ============================================================ */
 
 const AskAIView: FC<{
   text: string;
@@ -1300,9 +1251,6 @@ const AskAIView: FC<{
   );
 };
 
-/* ============================================================
-   COMPOSER
-   ============================================================ */
 
 const Composer: FC<{
   text: string;
@@ -1451,9 +1399,6 @@ const Composer: FC<{
   );
 };
 
-/* ============================================================
-   PROCESSING VIEW
-   ============================================================ */
 
 const ProcessingView: FC<{
   actionLabel: string;
@@ -1500,9 +1445,6 @@ const ProcessingView: FC<{
   </div>
 );
 
-/* ============================================================
-   RESULT BLOCK
-   ============================================================ */
 
 const ResultBlock: FC<{
   exchange: Exchange;
@@ -1593,9 +1535,6 @@ const ResultBlock: FC<{
   </article>
 );
 
-/* ============================================================
-   RESULT VIEW
-   ============================================================ */
 
 const ResultView: FC<{
   exchanges: Exchange[];
@@ -1706,9 +1645,6 @@ const ResultView: FC<{
   );
 };
 
-/* ============================================================
-   ERROR VIEW
-   ============================================================ */
 
 const ErrorView: FC<{
   message: string;
@@ -1756,9 +1692,6 @@ const ErrorView: FC<{
   </div>
 );
 
-/* ============================================================
-   TOAST
-   ============================================================ */
 
 const Toast: FC<{
   toast: ToastState | null;
@@ -1782,9 +1715,6 @@ const Toast: FC<{
   </div>
 );
 
-/* ============================================================
-   ROOT APP
-   ============================================================ */
 
 let idCounter = 0;
 
@@ -1854,9 +1784,6 @@ function App(): ReactNode {
   const activeAction =
     selectedAction ?? DEFAULT_ACTION;
 
-  /* ==========================================================
-     TOAST
-     ========================================================== */
 
   const showToast = useCallback(
     (
@@ -1881,9 +1808,6 @@ function App(): ReactNode {
     []
   );
 
-  /* ==========================================================
-     EXECUTE LENS SKILL
-     ========================================================== */
 
   const executeLensSkill = useCallback(
     async (
@@ -2030,15 +1954,11 @@ function App(): ReactNode {
   );
 
 
-  /* ==========================================================
-   FLOATING LENS & WINDOW MODE
-   ========================================================== */
 
   const handleFloatingOpenLens = useCallback(async () => {
     try {
       await switchToAppMode();
     } catch {
-      // Fallback if not running in Tauri
     }
 
     setView("home");
@@ -2127,7 +2047,6 @@ function App(): ReactNode {
           try {
             const extractedText = await executeVisionOCR(payload);
 
-            // Check stale after async OCR
             if (incomingSession < latestCropSessionRef.current) {
               console.log(`[CROP FLOW] STALE_DISCARD session=${incomingSession} after OCR`);
               isCropWorkflowActiveRef.current = false;
@@ -2227,9 +2146,6 @@ function App(): ReactNode {
   }, [handleReturnToOrb]);
 
 
-  /* ==========================================================
-     SELECT ACTION
-     ========================================================== */
 
   const handleSelectAction = useCallback(
     (action: ActionDef) => {
@@ -2252,9 +2168,6 @@ function App(): ReactNode {
     []
   );
 
-  /* ==========================================================
-     DESELECT ACTION
-     ========================================================== */
 
   const handleDeselectAction =
     useCallback(() => {
@@ -2262,9 +2175,6 @@ function App(): ReactNode {
       setView("home");
     }, []);
 
-  /* ==========================================================
-     GENERIC SUBMIT
-     ========================================================== */
 
   const handleSubmit = useCallback(() => {
     const query = text.trim();
@@ -2301,9 +2211,6 @@ function App(): ReactNode {
     executeLensSkill,
   ]);
 
-  /* ==========================================================
-     TRANSLATE SUBMIT
-     ========================================================== */
 
   const handleTranslateSubmit =
     useCallback(
@@ -2344,9 +2251,6 @@ function App(): ReactNode {
       [text, executeLensSkill]
     );
 
-  /* ==========================================================
-     REWRITE SUBMIT
-     ========================================================== */
 
   const handleRewriteSubmit =
     useCallback(
@@ -2390,9 +2294,6 @@ function App(): ReactNode {
       [text, executeLensSkill]
     );
 
-  /* ==========================================================
-     ASK AI SUBMIT
-     ========================================================== */
 
   const handleAskAISubmit = useCallback(
     (mode: "make_questions" | "ask_text") => {
@@ -2436,9 +2337,6 @@ function App(): ReactNode {
     [text, executeLensSkill]
   );
 
-  /* ==========================================================
-     CANCEL PROCESSING
-     ========================================================== */
 
   const handleCancelProcessing =
     useCallback(() => {
@@ -2476,9 +2374,6 @@ function App(): ReactNode {
       }
     }, [selectedAction]);
 
-  /* ==========================================================
-     RETRY
-     ========================================================== */
 
   const handleRetry = useCallback(
     (exchange?: Exchange) => {
@@ -2535,9 +2430,6 @@ function App(): ReactNode {
     ]
   );
 
-  /* ==========================================================
-     BACK FROM RESULT
-     ========================================================== */
 
   const handleBackFromResult =
     useCallback(() => {
@@ -2569,9 +2461,6 @@ function App(): ReactNode {
       }
     }, [selectedAction]);
 
-  /* ==========================================================
-     FOLLOW UP
-     ========================================================== */
 
   const handleFollowUp = useCallback(
     (query: string) => {
@@ -2598,9 +2487,6 @@ function App(): ReactNode {
     ]
   );
 
-  /* ==========================================================
-     COPY
-     ========================================================== */
 
   const handleCopy = useCallback(
     async (
@@ -2636,9 +2522,6 @@ function App(): ReactNode {
     [showToast]
   );
 
-  /* ==========================================================
-     INSERT
-     ========================================================== */
 
   const handleInsert = useCallback(
     (_content: string) => {
@@ -2650,18 +2533,12 @@ function App(): ReactNode {
     [showToast]
   );
 
-  /* ==========================================================
-     CLEAR
-     ========================================================== */
 
   const handleClear = useCallback(() => {
     setText("");
     textareaRef.current?.focus();
   }, []);
 
-  /* ==========================================================
-     ERROR BACK
-     ========================================================== */
 
   const handleErrorBack =
     useCallback(() => {
@@ -2690,9 +2567,6 @@ function App(): ReactNode {
       }
     }, [selectedAction]);
 
-  /* ==========================================================
-     KEYBOARD SHORTCUTS
-     ========================================================== */
 
   useEffect(() => {
     const handleKeyDown = (
@@ -2780,9 +2654,6 @@ function App(): ReactNode {
     handleSelectAction,
   ]);
 
-  /* ==========================================================
-     CLEANUP
-     ========================================================== */
 
   useEffect(() => {
     return () => {
@@ -2808,9 +2679,6 @@ function App(): ReactNode {
     };
   }, []);
 
-  /* ==========================================================
-     RENDER
-     ========================================================== */
 
   if (view === "orb") {
     return (
