@@ -1,14 +1,3 @@
-/**
- * cropStore.ts
- *
- * Global, reactive single source of truth for the LENS recent-crop state.
- *
- * Session model:
- *   activeSessionId  — set when a new crop starts (via startSession)
- *   latestCompletedSessionId — set ONLY when OCR commits a successful result
- *
- * Crop-Paste is only valid when currentCrop.sessionId === latestCompletedSessionId.
- */
 
 const RECENT_CROP_STORAGE_KEY = "lens_recent_crop";
 
@@ -29,9 +18,9 @@ type CropListener = (crop: RecentCrop | null) => void;
 
 class CropStore {
   private currentCrop: RecentCrop | null = null;
-  /** Bumped on every new crop window open */
+
   private activeSessionId: number = 0;
-  /** Only set when a successful OCR result is committed */
+
   private latestCompletedSessionId: number = 0;
   private listeners: Set<CropListener> = new Set();
 
@@ -51,7 +40,7 @@ class CropStore {
         }
       }
     } catch {
-      // Storage unavailable fallback
+
     }
   }
 
@@ -65,11 +54,7 @@ class CropStore {
     }
   }
 
-  /**
-   * Called when a new crop window opens.
-   * Advances the active session ID so any in-flight OCR for the previous
-   * session can detect it is stale.
-   */
+
   public startSession(sessionId: number): void {
     this.activeSessionId = sessionId;
     console.log(`[CROP FLOW] START session=${sessionId}`);
@@ -83,10 +68,6 @@ class CropStore {
     return this.latestCompletedSessionId;
   }
 
-  /**
-   * Subscribe to crop store updates.
-   * Returns an unsubscribe function.
-   */
   public subscribe(listener: CropListener): () => void {
     this.listeners.add(listener);
     listener(this.currentCrop);
@@ -95,12 +76,7 @@ class CropStore {
     };
   }
 
-  /**
-   * Returns the latest crop text ONLY if the stored crop belongs to
-   * latestCompletedSessionId, preventing stale results from surfacing.
-   *
-   * Use this for Crop-Paste.
-   */
+
   public getValidatedCrop(): { text: string; sessionId: number } | null {
     if (
       this.currentCrop &&
@@ -116,9 +92,6 @@ class CropStore {
     return null;
   }
 
-  /**
-   * Returns the current crop text (legacy accessor, no session validation).
-   */
   public getRecentCrop(): string | null {
     if (this.currentCrop && this.currentCrop.text.trim().length > 0) {
       return this.currentCrop.text;
@@ -126,19 +99,10 @@ class CropStore {
     return null;
   }
 
-  /**
-   * Returns the full RecentCrop object with metadata.
-   */
   public getRecentCropData(): RecentCrop | null {
     return this.currentCrop;
   }
 
-  /**
-   * Commits a successful OCR result.
-   *
-   * Only commits if sessionId === activeSessionId (not superseded).
-   * Updates latestCompletedSessionId so Crop-Paste can validate the result.
-   */
   public setRecentCrop(
     text: string,
     bounds?: { x: number; y: number; width: number; height: number },
@@ -155,7 +119,6 @@ class CropStore {
       return null;
     }
 
-    // Reject if a newer session has started since this OCR was submitted
     if (effectiveSessionId < this.activeSessionId) {
       console.log(
         `[CROP FLOW] STORE_REJECT stale session=${effectiveSessionId} active=${this.activeSessionId}`
@@ -182,7 +145,7 @@ class CropStore {
     try {
       localStorage.setItem(RECENT_CROP_STORAGE_KEY, JSON.stringify(newCrop));
     } catch {
-      // Storage unavailable fallback
+
     }
 
     const tStoreDone = performance.now();
@@ -190,7 +153,6 @@ class CropStore {
 
     this.notify();
 
-    // Verify commit immediately
     const verified = this.currentCrop?.text ?? "(null)";
     console.log(
       `[CROP FLOW] STORE_VERIFY session=${effectiveSessionId} text="${verified.slice(0, 60)}"`
