@@ -26,11 +26,7 @@ export function FloatingLens({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const dragThreshold = 4; // px movement before drag engages
-
-  /* ----------------------------------------------------------------
-     Toggle menu expand / collapse
-     ---------------------------------------------------------------- */
+  const dragThreshold = 4;
 
   const toggleMenu = useCallback(async () => {
     if (!isMenuOpen) {
@@ -52,10 +48,6 @@ export function FloatingLens({
     onCrop();
   }, [onCrop]);
 
-  /* ----------------------------------------------------------------
-     Click outside to collapse menu
-     ---------------------------------------------------------------- */
-
   useEffect(() => {
     if (!isMenuOpen) return;
 
@@ -74,10 +66,6 @@ export function FloatingLens({
       window.removeEventListener("mousedown", handlePointerDownOutside);
     };
   }, [isMenuOpen]);
-
-  /* ----------------------------------------------------------------
-     Drag vs click handling on orb launcher button
-     ---------------------------------------------------------------- */
 
   const handleLauncherPointerDown = useCallback(
     (e: PointerEvent<HTMLButtonElement>) => {
@@ -101,7 +89,6 @@ export function FloatingLens({
 
       const onUp = () => {
         if (!dragStarted) {
-          // Normal click — toggle slide-out menu
           toggleMenu();
         }
 
@@ -120,10 +107,6 @@ export function FloatingLens({
     [isOrbMode, toggleMenu]
   );
 
-  /* ----------------------------------------------------------------
-     Render
-     ---------------------------------------------------------------- */
-
   return (
     <div
       ref={containerRef}
@@ -131,7 +114,6 @@ export function FloatingLens({
         isMenuOpen ? "is-open" : ""
       }`}
     >
-      {/* Slide-out Action Menu */}
       <div className="floating-lens__menu" role="menu">
         <button
           type="button"
@@ -158,7 +140,6 @@ export function FloatingLens({
         </button>
       </div>
 
-      {/* Floating Launcher Orb Button */}
       <button
         type="button"
         className="floating-lens__launcher"
